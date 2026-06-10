@@ -1,0 +1,12 @@
+{
+  "name": "kb-realestate-guide",
+  "version": "1.0.0",
+  "description": "KB 부동산 가이드 - 사회초년생·신혼부부를 위한 단계별 안내",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

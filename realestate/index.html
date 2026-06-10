@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KB 부동산 가이드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══ 홈 ══════════════════════════════════════════════ -->
+  <div class="screen active" id="screen-home">
+
+    <div class="home-header">
+      <div class="home-hero">
+        <div class="hero-icon">🏠</div>
+        <div class="hero-tagline">처음 집 구할 때<br>뭐부터 해야 할까?</div>
+      </div>
+    </div>
+
+    <div class="notice-banner">
+      <span class="nb-icon">💡</span>
+      <div class="nb-text"><strong>오늘의 팁</strong><br>계약 전 등기부등본은 반드시 확인하세요!</div>
+    </div>
+
+    <div class="section-title">거래 유형 선택</div>
+    <div class="type-cards">
+      <div class="type-card" onclick="goChecklist('월세')">
+        <div class="tc-icon">🏠</div>
+        <div class="tc-name">월세</div>
+        <div class="tc-sub">월 고정비용</div>
+      </div>
+      <div class="type-card" onclick="goChecklist('전세')">
+        <div class="tc-icon">🔑</div>
+        <div class="tc-name">전세</div>
+        <div class="tc-sub">목돈 보증금</div>
+      </div>
+      <div class="type-card" onclick="goChecklist('매매')">
+        <div class="tc-icon">🏡</div>
+        <div class="tc-name">매매</div>
+        <div class="tc-sub">내 집 마련</div>
+      </div>
+    </div>
+
+    <div class="section-title">빠른 메뉴</div>
+    <div class="quick-btns">
+      <div class="quick-btn" onclick="goScreen('screen-mylist')">
+        <div class="qb-icon">📋</div>
+        <div class="qb-text">
+          <div class="t1">내 체크리스트</div>
+          <div class="t2">저장된 목록 보기</div>
+        </div>
+      </div>
+      <div class="quick-btn" onclick="goScreen('screen-chat')">
+        <div class="qb-icon">💬</div>
+        <div class="qb-text">
+          <div class="t1">AI 상담하기</div>
+          <div class="t2">궁금한 것 물어보기</div>
+        </div>
+      </div>
+      <div class="quick-btn" onclick="showCreateModal()">
+        <div class="qb-icon">✍️</div>
+        <div class="qb-text">
+          <div class="t1">새 목록 만들기</div>
+          <div class="t2">부동산 정보 입력</div>
+        </div>
+      </div>
+      <div class="quick-btn" onclick="goScreen('screen-guide')">
+        <div class="qb-icon">📖</div>
+        <div class="qb-text">
+          <div class="t1">용어 가이드</div>
+          <div class="t2">어려운 용어 정리</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">최근 체크리스트</div>
+    <div id="recent-list"></div>
+
+  </div><!-- /screen-home -->
+
+  <!-- ══ 체크리스트 ═══════════════════════════════════════ -->
+  <div class="screen" id="screen-checklist">
+    <div class="top-bar">
+      <div class="back-btn" onclick="goBack()">&#8592;</div>
+      <div class="title">체크리스트</div>
+    </div>
+    <div class="checklist-type-tabs">
+      <div class="clt-tab active" onclick="switchType('월세',this)">🏠 월세</div>
+      <div class="clt-tab"       onclick="switchType('전세',this)">🔑 전세</div>
+      <div class="clt-tab"       onclick="switchType('매매',this)">🏡 매매</div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="pb-label">
+        <span class="pbl-text">전체 진행률</span>
+        <span class="pbl-num" id="progress-text">0 / 0</span>
+      </div>
+      <div class="pb-track">
+        <div class="pb-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div id="checklist-content"></div>
+  </div>
+
+  <!-- ══ 내 체크리스트 목록 ════════════════════════════════ -->
+  <div class="screen" id="screen-mylist">
+    <div class="top-bar">
+      <div class="back-btn" onclick="goBack()">&#8592;</div>
+      <div class="title">내 체크리스트</div>
+      <div class="icon-btn" onclick="showCreateModal()">＋</div>
+    </div>
+    <div id="mylist-content" style="padding-top:8px"></div>
+  </div>
+
+  <!-- ══ AI 챗봇 ══════════════════════════════════════════ -->
+  <div class="screen" id="screen-chat">
+    <div class="top-bar">
+      <div class="back-btn" onclick="goBack()">&#8592;</div>
+      <div class="title">AI 부동산 상담</div>
+      <div class="top-avatar">🤖</div>
+    </div>
+
+    <div class="chat-wrapper">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-row bot">
+          <div class="chat-bot-name">KB 부동산 AI</div>
+          <div class="chat-bubble bot">안녕하세요! 저는 KB 부동산 AI 상담사입니다 😊<br><br>전월세·매매 관련 궁금한 것은 무엇이든 물어보세요!</div>
+        </div>
+        <div class="chat-row bot">
+          <div class="chat-bot-name">KB 부동산 AI</div>
+          <div class="chat-bubble bot">아래 자주 묻는 질문을 눌러보세요 👇</div>
+        </div>
+      </div>
+
+      <div class="chat-suggestions" id="chat-suggestions">
+        <div class="chat-sug-btn" onclick="askQuestion('전세와 월세, 어느 게 유리해요?')">전세 vs 월세 비교</div>
+        <div class="chat-sug-btn" onclick="askQuestion('등기부등본이 뭔가요?')">등기부등본이란?</div>
+        <div class="chat-sug-btn" onclick="askQuestion('전세 사기 예방법을 알려주세요')">전세 사기 예방</div>
+        <div class="chat-sug-btn" onclick="askQuestion('계약서 작성 시 주의사항이 뭔가요?')">계약서 주의사항</div>
+      </div>
+
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input"
+          placeholder="궁금한 것을 입력하세요..."
+          onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="chat-send-btn" onclick="sendChat()">&#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 용어 가이드 ══════════════════════════════════════ -->
+  <div class="screen" id="screen-guide">
+    <div class="top-bar">
+      <div class="back-btn" onclick="goBack()">&#8592;</div>
+      <div class="title">부동산 용어 가이드</div>
+    </div>
+    <div style="padding:12px 16px 20px" id="guide-content"></div>
+  </div>
+
+  <!-- ══ 하단 네비게이션 ══════════════════════════════════ -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-home"      onclick="switchNav('home')">
+      <span class="ni-icon">🏠</span>
+      <span class="ni-label">홈</span>
+    </div>
+    <div class="nav-item"        id="nav-checklist" onclick="switchNav('checklist')">
+      <span class="ni-icon">✅</span>
+      <span class="ni-label">체크리스트</span>
+    </div>
+    <div class="nav-item"        id="nav-mylist"    onclick="switchNav('mylist')">
+      <span class="ni-icon">📋</span>
+      <span class="ni-label">내 목록</span>
+    </div>
+    <div class="nav-item"        id="nav-chat"      onclick="switchNav('chat')">
+      <span class="ni-icon">💬</span>
+      <span class="ni-label">AI 상담</span>
+    </div>
+  </div>
+
+  <!-- ══ 새 목록 만들기 모달 ════════════════════════════════ -->
+  <div class="modal-overlay" id="create-modal" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">새 체크리스트 만들기</div>
+
+      <div class="form-row">
+        <div class="form-label">거래 유형</div>
+        <div class="type-select-grid">
+          <div class="type-sel-btn sel" id="ts-월세" onclick="selectModalType('월세')">🏠 월세</div>
+          <div class="type-sel-btn"     id="ts-전세" onclick="selectModalType('전세')">🔑 전세</div>
+          <div class="type-sel-btn"     id="ts-매매" onclick="selectModalType('매매')">🏡 매매</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">부동산 이름 또는 별칭</div>
+        <input class="form-input" id="form-name" placeholder="예) 마포구 원룸">
+      </div>
+      <div class="form-row">
+        <div class="form-label">주소 (선택)</div>
+        <input class="form-input" id="form-addr" placeholder="예) 서울시 마포구 공덕동 123">
+      </div>
+      <div class="form-row">
+        <div class="form-label">보증금 / 가격</div>
+        <input class="form-input" id="form-price" placeholder="예) 3,000만원">
+      </div>
+      <button class="submit-btn" onclick="createChecklist()">체크리스트 시작하기 →</button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
