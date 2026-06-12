@@ -2,89 +2,155 @@ import { useState } from 'react';
 import api from '../api/api';
 
 const initialForm = {
-  annualIncome: '', totalAssets: '', totalDebt: '',
-  creditScore: '', employmentType: '정규직', tradeType: '전세', targetPrice: '',
+  monthlyIncome: '',
+  savings: '',
+  stayPeriod: '2~3년',
+  household: '1인 가구',
+  ownershipWish: '상관없음',
+  priority: '가격 안정성',
+};
+
+const OPTIONS = {
+  stayPeriod:    ['1년 미만', '1~2년', '2~3년', '3~5년', '5년 이상'],
+  household:     ['1인 가구', '2인 가구', '3인 이상'],
+  ownershipWish: ['꼭 내 집 갖고 싶다', '있으면 좋겠다', '상관없음', '자유롭게 살고 싶다'],
+  priority:      ['가격 안정성', '이사 자유도', '내 집 마련', '월 지출 최소화'],
 };
 
 export default function LoanPage() {
   const [form, setForm] = useState(initialForm);
-  const [results, setResults] = useState(null);
+  const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+    setResult('');
+
+    const prompt = `당신은 KB국민은행 부동산 전문 상담사입니다. 아래 고객 정보를 바탕으로 월세/전세/매매 중 가장 적합한 주거 유형을 추천해주세요.
+
+[고객 정보]
+- 월 소득: ${form.monthlyIncome}만원
+- 현재 모은 돈(예산): ${form.savings}만원
+- 거주 계획 기간: ${form.stayPeriod}
+- 가구 유형: ${form.household}
+- 내 집 소유 희망: ${form.ownershipWish}
+- 우선순위: ${form.priority}
+
+다음 형식으로 답변해주세요:
+1. **추천 유형**: 월세/전세/매매 중 하나 (가장 적합한 것)
+2. **추천 이유**: 3가지 이유 (bullet point)
+3. **주의사항**: 2가지 (bullet point)
+4. **KB 한마디**: 한 문장 조언
+
+답변은 친근하고 이해하기 쉽게 한국어로 작성해주세요.`;
+
     try {
-      const res = await api.post('/api/loan/recommend', {
-        ...form,
-        annualIncome: Number(form.annualIncome),
-        totalAssets: Number(form.totalAssets),
-        totalDebt: Number(form.totalDebt),
-        creditScore: Number(form.creditScore),
-        targetPrice: Number(form.targetPrice),
+      const res = await api.post('/api/chat', {
+        messages: [{ role: 'user', content: prompt }],
       });
-      setResults(res.data);
+      setResult(res.data.reply);
     } catch {
-      alert('오류가 발생했습니다.');
+      setError('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
   };
 
+  const renderResult = (text) => {
+    return text.split('\n').map((line, i) => {
+      if (line.startsWith('**') || line.match(/^\d\./)) {
+        return <div key={i} className="result-section-title">{line.replace(/\*\*/g, '')}</div>;
+      }
+      if (line.startsWith('- ') || line.startsWith('• ')) {
+        return <div key={i} className="result-bullet">{line}</div>;
+      }
+      if (line.trim() === '') return <div key={i} style={{ height: '6px' }} />;
+      return <div key={i} className="result-text">{line}</div>;
+    });
+  };
+
   return (
     <>
       <div className="top-bar">
-        <span className="title">대출 추천</span>
+        <span className="title">맞춤 집 추천</span>
       </div>
 
       <form onSubmit={handleSubmit} className="loan-form">
+        <div className="housing-intro">
+          <span className="housing-intro-icon">🏡</span>
+          <p>내 상황에 딱 맞는 주거 유형을<br />AI가 분석해드려요</p>
+        </div>
+
+        <div className="form-row">
+          <label className="form-label">월 소득 (만원)</label>
+          <input
+            className="form-input"
+            name="monthlyIncome"
+            type="number"
+            placeholder="예) 300"
+            value={form.monthlyIncome}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <label className="form-label">현재 모은 돈 (만원)</label>
+          <input
+            className="form-input"
+            name="savings"
+            type="number"
+            placeholder="예) 5000"
+            value={form.savings}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
         {[
-          { name: 'annualIncome', label: '연소득 (만원)' },
-          { name: 'totalAssets',  label: '총 자산 (만원)' },
-          { name: 'totalDebt',    label: '총 부채 (만원)' },
-          { name: 'creditScore',  label: '신용점수 (0~1000)' },
-          { name: 'targetPrice',  label: '목표 금액 (만원)' },
+          { name: 'stayPeriod',    label: '거주 계획 기간' },
+          { name: 'household',     label: '가구 유형' },
+          { name: 'ownershipWish', label: '내 집 소유 희망' },
+          { name: 'priority',      label: '가장 중요한 것' },
         ].map(f => (
           <div key={f.name} className="form-row">
-            <div className="form-label">{f.label}</div>
-            <input className="form-input" name={f.name} type="number" value={form[f.name]} onChange={handleChange} required />
+            <label className="form-label">{f.label}</label>
+            <div className="option-chips">
+              {OPTIONS[f.name].map(opt => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`chip ${form[f.name] === opt ? 'active' : ''}`}
+                  onClick={() => setForm({ ...form, [f.name]: opt })}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
           </div>
         ))}
-        <div className="form-row">
-          <div className="form-label">직장 유형</div>
-          <select className="form-input" name="employmentType" value={form.employmentType} onChange={handleChange}>
-            {['정규직','계약직','자영업','무직'].map(v => <option key={v}>{v}</option>)}
-          </select>
-        </div>
-        <div className="form-row">
-          <div className="form-label">거래 유형</div>
-          <select className="form-input" name="tradeType" value={form.tradeType} onChange={handleChange}>
-            {['월세','전세','매매'].map(v => <option key={v}>{v}</option>)}
-          </select>
-        </div>
+
         <button className="submit-btn" type="submit" disabled={loading}>
-          {loading ? '분석 중...' : '대출 추천 받기'}
+          {loading ? '🤖 AI 분석 중...' : '맞춤 추천 받기 →'}
         </button>
       </form>
 
-      {results && (
-        <div className="loan-results">
-          <h3>추천 대출 상품 {results.length}개</h3>
-          {results.map((r, i) => (
-            <div key={i} className="loan-card">
-              <div className="loan-card-header">
-                <h4>{r.productName}</h4>
-                <span className="match-score">적합도 {r.matchScore}%</span>
-              </div>
-              <p><b>종류:</b> {r.loanType}</p>
-              <p><b>금리:</b> {r.interestRate}</p>
-              <p><b>최대 대출:</b> {r.maxLoanAmount.toLocaleString()}만원</p>
-              <p><b>자격:</b> {r.eligibility}</p>
-              <p className="desc">{r.description}</p>
-            </div>
-          ))}
+      {error && <div className="error-banner">{error}</div>}
+
+      {result && (
+        <div className="housing-result">
+          <div className="housing-result-header">
+            <span>🏡</span>
+            <span>AI 맞춤 추천 결과</span>
+          </div>
+          <div className="housing-result-body">
+            {renderResult(result)}
+          </div>
         </div>
       )}
     </>
