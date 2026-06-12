@@ -25,7 +25,6 @@ export default function HomePage({
       <div className="hero">
         <span className="hero-icon">🏠</span>
         <div className="hero-title">처음 집 구할 때<br />뭐부터 해야 할까?</div>
-        <div className="hero-sub">KB 부동산 스마트 가이드와 함께 시작하세요</div>
       </div>
 
       <div className="notice-banner">
