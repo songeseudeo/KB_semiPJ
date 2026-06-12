@@ -1,50 +1,161 @@
 import { useState } from 'react';
 import HomePage from './pages/HomePage';
 import ChecklistPage from './pages/ChecklistPage';
-import LoanPage from './pages/LoanPage';
+import MyListPage from './pages/MyListPage';
 import ChatPage from './pages/ChatPage';
 import TermsPage from './pages/TermsPage';
+import LoanPage from './pages/LoanPage';
 import './App.css';
 
 const TABS = [
   { id: 'home',      icon: '🏠', label: '홈' },
   { id: 'checklist', icon: '✅', label: '체크리스트' },
-  { id: 'loan',      icon: '🏡', label: '맞춤추천' },
-  { id: 'chat',      icon: '🤖', label: 'AI상담' },
+  { id: 'mylist',    icon: '📋', label: '내 목록' },
+  { id: 'chat',      icon: '💬', label: 'AI 상담' },
 ];
 
-export default function App() {
-  const [tab, setTab] = useState('home');
-  const [selectedTradeType, setSelectedTradeType] = useState('전세');
+const NAV_TABS = ['home', 'checklist', 'mylist', 'chat'];
 
-  const goChecklist = (type) => {
-    setSelectedTradeType(type);
-    setTab('checklist');
+export default function App() {
+  const [screen, setScreen] = useState('home');
+  const [checklistType, setChecklistType] = useState('월세');
+  const [savedLists, setSavedLists] = useState(
+    () => JSON.parse(localStorage.getItem('kb_lists') || '[]')
+  );
+  const [checkStates, setCheckStates] = useState(
+    () => JSON.parse(localStorage.getItem('kb_states') || '{}')
+  );
+  const [showModal, setShowModal] = useState(false);
+  const [modalName, setModalName] = useState('');
+  const [modalAddr, setModalAddr] = useState('');
+  const [modalType, setModalType] = useState('월세');
+
+  const persistLists = (lists) => {
+    setSavedLists(lists);
+    localStorage.setItem('kb_lists', JSON.stringify(lists));
   };
 
+  const persistStates = (states) => {
+    setCheckStates(states);
+    localStorage.setItem('kb_states', JSON.stringify(states));
+  };
+
+  const openCreateModal = () => {
+    setModalName('');
+    setModalAddr('');
+    setModalType('월세');
+    setShowModal(true);
+  };
+
+  const createList = () => {
+    if (!modalName.trim()) return;
+    const newList = {
+      id: Date.now(),
+      name: modalName.trim(),
+      addr: modalAddr.trim() || '주소 미입력',
+      type: modalType,
+      date: new Date().toLocaleDateString('ko-KR'),
+    };
+    persistLists([newList, ...savedLists]);
+    setShowModal(false);
+    setChecklistType(modalType);
+    setScreen('checklist');
+  };
+
+  const goChecklist = (type) => {
+    setChecklistType(type);
+    setScreen('checklist');
+  };
+
+  const activeTab = NAV_TABS.includes(screen) ? screen : null;
+
   return (
-    <div className="app-shell">
-      <div className="page-container">
-        {tab === 'home'      && <HomePage onNavigate={setTab} onGoChecklist={goChecklist} />}
-        {tab === 'checklist' && <ChecklistPage initialType={selectedTradeType} />}
-        {tab === 'loan'      && <LoanPage />}
-        {tab === 'chat'      && <ChatPage />}
-        {tab === 'terms'     && <TermsPage onBack={() => setTab('home')} />}
+    <>
+      <div className="screen">
+        {screen === 'home' &&
+          <HomePage
+            savedLists={savedLists}
+            onGoChecklist={goChecklist}
+            onGoMyList={() => setScreen('mylist')}
+            onGoChat={() => setScreen('chat')}
+            onGoTerms={() => setScreen('terms')}
+            onGoLoan={() => setScreen('loan')}
+            onCreateList={openCreateModal}
+            onOpenList={(list) => { setChecklistType(list.type); setScreen('checklist'); }}
+          />
+        }
+        {screen === 'checklist' &&
+          <ChecklistPage
+            initialType={checklistType}
+            checkStates={checkStates}
+            onCheckStates={persistStates}
+            savedLists={savedLists}
+          />
+        }
+        {screen === 'mylist' &&
+          <MyListPage
+            savedLists={savedLists}
+            checkStates={checkStates}
+            onCreateList={openCreateModal}
+            onOpenList={(list) => { setChecklistType(list.type); setScreen('checklist'); }}
+            onDeleteList={(id) => persistLists(savedLists.filter(l => l.id !== id))}
+          />
+        }
+        {screen === 'chat' && <ChatPage />}
+        {screen === 'terms' && <TermsPage onBack={() => setScreen('home')} />}
+        {screen === 'loan' && <LoanPage onBack={() => setScreen('home')} />}
       </div>
-      {tab !== 'terms' && (
-        <nav className="bottom-nav">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              className={`nav-item ${tab === t.id ? 'active' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              <span className="ni-icon">{t.icon}</span>
-              <span className="ni-label">{t.label}</span>
-            </button>
-          ))}
-        </nav>
+
+      <nav className="bottom-nav">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            className={`nav-item ${activeTab === t.id ? 'active' : ''}`}
+            onClick={() => setScreen(t.id)}
+          >
+            <span className="nav-icon">{t.icon}</span>
+            <span className="nav-label">{t.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="modal-sheet">
+            <div className="modal-handle" />
+            <div className="modal-title">새 체크리스트 만들기</div>
+            <label className="modal-label">목록 이름 *</label>
+            <input
+              className="modal-input"
+              placeholder="예: 강남구 원룸 매물"
+              value={modalName}
+              onChange={e => setModalName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && createList()}
+            />
+            <label className="modal-label">주소 (선택)</label>
+            <input
+              className="modal-input"
+              placeholder="예: 서울시 강남구 역삼동"
+              value={modalAddr}
+              onChange={e => setModalAddr(e.target.value)}
+            />
+            <label className="modal-label">거래 유형</label>
+            <div className="modal-type-btns">
+              {['월세', '전세', '매매'].map(t => (
+                <button
+                  key={t}
+                  className={`modal-type-btn ${modalType === t ? 'selected' : ''}`}
+                  onClick={() => setModalType(t)}
+                >
+                  {t === '월세' ? '🏠 월세' : t === '전세' ? '🔑 전세' : '🏡 매매'}
+                </button>
+              ))}
+            </div>
+            <button className="modal-confirm-btn" onClick={createList}>체크리스트 시작하기</button>
+            <button className="modal-cancel-btn" onClick={() => setShowModal(false)}>취소</button>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

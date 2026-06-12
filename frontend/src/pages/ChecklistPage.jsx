@@ -1,84 +1,94 @@
-import { useState, useEffect } from 'react';
-import api from '../api/api';
+import { useState } from 'react';
+import { CHECKLIST_DATA } from '../data/checklistData';
 
-export default function ChecklistPage({ initialType = '전세' }) {
-  const [tradeType, setTradeType] = useState(initialType);
-  const [checklists, setChecklists] = useState([]);
-  const [checked, setChecked] = useState({});
-  const [loading, setLoading] = useState(false);
+const TAG_LABELS = { important: '⚠️ 중요', tip: '💡 팁', legal: '⚖️ 법률' };
 
-  useEffect(() => {
-    setLoading(true);
-    api.get(`/api/checklist?tradeType=${tradeType}`)
-      .then(res => { setChecklists(res.data); setChecked({}); })
-      .catch(() => setChecklists([]))
-      .finally(() => setLoading(false));
-  }, [tradeType]);
+export default function ChecklistPage({ initialType = '월세', checkStates, onCheckStates }) {
+  const [activeType, setActiveType] = useState(initialType);
+  const steps = CHECKLIST_DATA[activeType] || [];
 
-  const toggle = (id) => setChecked(prev => ({ ...prev, [id]: !prev[id] }));
+  const allItems = steps.flatMap((s, si) => s.items.map((_, ii) => `${si}_${ii}`));
+  const typeStates = checkStates[activeType] || {};
+  const doneCount = allItems.filter(k => typeStates[k]).length;
+  const total = allItems.length;
+  const pct = total ? Math.round((doneCount / total) * 100) : 0;
 
-  const checkedCount = Object.values(checked).filter(Boolean).length;
-  const total = checklists.length;
-  const pct = total > 0 ? Math.round(checkedCount / total * 100) : 0;
+  const toggle = (si, ii) => {
+    const key = `${si}_${ii}`;
+    const newTypeStates = { ...typeStates, [key]: !typeStates[key] };
+    onCheckStates({ ...checkStates, [activeType]: newTypeStates });
+  };
 
-  const typeIcons = { 월세: '🏠', 전세: '🔑', 매매: '🏡' };
+  const isStepDone = (si) => {
+    const step = steps[si];
+    return step.items.every((_, ii) => typeStates[`${si}_${ii}`]);
+  };
 
   return (
     <>
-      <div className="top-bar">
-        <span className="title">계약 체크리스트</span>
+      <div className="cl-header">
+        <div className="cl-header-title">부동산 체크리스트</div>
+        <div className="cl-header-sub">계약 전 빠짐없이 확인하세요</div>
       </div>
 
-      <div className="checklist-type-tabs">
+      <div className="cl-tabs">
         {['월세', '전세', '매매'].map(t => (
-          <button key={t} className={`clt-tab ${tradeType === t ? 'active' : ''}`} onClick={() => setTradeType(t)}>
-            {typeIcons[t]} {t}
+          <button
+            key={t}
+            className={`cl-tab ${activeType === t ? 'active' : ''}`}
+            onClick={() => setActiveType(t)}
+          >
+            {t === '월세' ? '🏠 월세' : t === '전세' ? '🔑 전세' : '🏡 매매'}
           </button>
         ))}
       </div>
 
-      <div className="progress-bar-wrap">
-        <div className="pb-label">
-          <span className="pbl-text">전체 진행률</span>
-          <span className="pbl-num">{checkedCount} / {total}</span>
+      <div className="cl-progress">
+        <div className="progress-label">
+          <span>진행률</span>
+          <span>{doneCount} / {total} 완료</span>
         </div>
-        <div className="pb-track">
-          <div className="pb-fill" style={{ width: `${pct}%` }} />
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${pct}%` }} />
         </div>
-        {total > 0 && checkedCount === total && (
-          <div className="pb-done">✅ 모든 항목 완료! 계약 준비가 됐어요.</div>
-        )}
       </div>
 
-      <div className="step-section">
-        {loading ? (
-          <div className="empty-state">
-            <div className="es-icon">⏳</div>
-            <div className="es-title">불러오는 중...</div>
-          </div>
-        ) : checklists.length === 0 ? (
-          <div className="empty-state">
-            <div className="es-icon">📋</div>
-            <div className="es-title">데이터를 불러올 수 없습니다</div>
-            <div className="es-desc">서버 연결을 확인해주세요.</div>
-          </div>
-        ) : (
-          checklists.map((item) => (
-            <div
-              key={item.id}
-              className={`check-item ${checked[item.id] ? 'checked' : ''}`}
-              onClick={() => toggle(item.id)}
-            >
-              <div className="ci-box">
-                <span className="ci-check">✓</span>
+      <div className="cl-body">
+        {steps.map((step, si) => {
+          const done = isStepDone(si);
+          return (
+            <div key={si} className="step-section">
+              <div className="step-header">
+                <div className="step-num">{si + 1}</div>
+                <div className="step-title">{step.step.replace(/^\d+단계: /, '')}</div>
+                <span className={`step-badge ${done ? 'done' : 'progress'}`}>
+                  {done ? '✅ 완료' : '진행중'}
+                </span>
               </div>
-              <div className="ci-content">
-                <div className="ci-title">{item.title}</div>
-                {item.description && <div className="ci-desc">{item.description}</div>}
-              </div>
+              {step.items.map((item, ii) => {
+                const checked = !!typeStates[`${si}_${ii}`];
+                return (
+                  <div
+                    key={ii}
+                    className={`check-item ${checked ? 'checked' : ''}`}
+                    onClick={() => toggle(si, ii)}
+                  >
+                    <div className="ci-box">{checked ? '✓' : ''}</div>
+                    <div className="ci-content">
+                      <div className="ci-title">{item.t}</div>
+                      <div className="ci-desc">{item.d}</div>
+                      {item.tag && (
+                        <span className={`ci-tag ${item.tag}`}>
+                          {TAG_LABELS[item.tag]}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </>
   );
