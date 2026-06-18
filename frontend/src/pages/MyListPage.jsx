@@ -13,7 +13,7 @@ export default function MyListPage({ savedLists, checkStates, onCreateList, onOp
   return (
     <>
       <div className="ml-header">
-        <div className="ml-header-text">
+        <div>
           <div className="ml-header-title">내 체크리스트</div>
           <div className="ml-header-sub">저장된 목록 {savedLists.length}개</div>
         </div>

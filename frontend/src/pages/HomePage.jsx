@@ -1,28 +1,30 @@
 import { CHECKLIST_DATA } from '../data/checklistData';
 
 export default function HomePage({
-  savedLists,
-  onGoChecklist,
-  onGoMyList,
-  onGoChat,
-  onGoTerms,
-  onGoLoan,
-  onCreateList,
-  onOpenList,
+  user, savedLists,
+  onGoChecklist, onGoMyList, onGoChat, onGoTerms, onGoLoan,
+  onCreateList, onOpenList, onLogout,
 }) {
   const getProgress = (list) => {
     const data = CHECKLIST_DATA[list.type] || [];
     const total = data.reduce((s, step) => s + step.items.length, 0);
     if (total === 0) return 0;
     const stored = JSON.parse(localStorage.getItem('kb_states') || '{}');
-    const states = stored[list.type] || {};
-    const done = Object.values(states).filter(Boolean).length;
+    const done = Object.values(stored[list.type] || {}).filter(Boolean).length;
     return Math.round((done / total) * 100);
   };
 
   return (
     <>
       <div className="hero">
+        <div className="hero-greeting">
+          👋 안녕하세요, {user?.name}님!
+          <button onClick={onLogout} style={{
+            marginLeft: 'auto', background: 'rgba(91,110,245,0.12)', border: 'none',
+            borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 700,
+            color: '#5B6EF5', cursor: 'pointer', fontFamily: 'inherit',
+          }}>로그아웃</button>
+        </div>
         <span className="hero-icon">🏠</span>
         <div className="hero-title">처음 집 구할 때<br />뭐부터 해야 할까?</div>
       </div>
@@ -76,12 +78,11 @@ export default function HomePage({
           <div className="recent-empty">
             <span className="empty-icon">📋</span>
             아직 저장된 체크리스트가 없어요<br />
-            <button
-              style={{ marginTop: 12, background: '#8B4513', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 20px', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-              onClick={onCreateList}
-            >
-              + 새 목록 만들기
-            </button>
+            <button onClick={onCreateList} style={{
+              marginTop: 12, background: '#5B6EF5', color: '#fff', border: 'none',
+              borderRadius: 20, padding: '8px 20px', fontFamily: 'inherit',
+              fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            }}>+ 새 목록 만들기</button>
           </div>
         ) : (
           savedLists.slice(0, 3).map(list => {

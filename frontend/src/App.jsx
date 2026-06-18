@@ -5,6 +5,8 @@ import MyListPage from './pages/MyListPage';
 import ChatPage from './pages/ChatPage';
 import TermsPage from './pages/TermsPage';
 import LoanPage from './pages/LoanPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import './App.css';
 
 const TABS = [
@@ -13,10 +15,13 @@ const TABS = [
   { id: 'mylist',    icon: '📋', label: '내 목록' },
   { id: 'chat',      icon: '💬', label: 'AI 상담' },
 ];
-
 const NAV_TABS = ['home', 'checklist', 'mylist', 'chat'];
 
 export default function App() {
+  const [authScreen, setAuthScreen] = useState('login'); // 'login' | 'signup'
+  const [currentUser, setCurrentUser] = useState(
+    () => JSON.parse(localStorage.getItem('kb_current_user') || 'null')
+  );
   const [screen, setScreen] = useState('home');
   const [checklistType, setChecklistType] = useState('월세');
   const [savedLists, setSavedLists] = useState(
@@ -34,19 +39,21 @@ export default function App() {
     setSavedLists(lists);
     localStorage.setItem('kb_lists', JSON.stringify(lists));
   };
-
   const persistStates = (states) => {
     setCheckStates(states);
     localStorage.setItem('kb_states', JSON.stringify(states));
   };
 
-  const openCreateModal = () => {
-    setModalName('');
-    setModalAddr('');
-    setModalType('월세');
-    setShowModal(true);
+  const logout = () => {
+    localStorage.removeItem('kb_current_user');
+    setCurrentUser(null);
+    setAuthScreen('login');
   };
 
+  const openCreateModal = () => {
+    setModalName(''); setModalAddr(''); setModalType('월세');
+    setShowModal(true);
+  };
   const createList = () => {
     if (!modalName.trim()) return;
     const newList = {
@@ -62,18 +69,26 @@ export default function App() {
     setScreen('checklist');
   };
 
-  const goChecklist = (type) => {
-    setChecklistType(type);
-    setScreen('checklist');
-  };
-
+  const goChecklist = (type) => { setChecklistType(type); setScreen('checklist'); };
   const activeTab = NAV_TABS.includes(screen) ? screen : null;
+
+  if (!currentUser) {
+    return (
+      <>
+        {authScreen === 'login'
+          ? <LoginPage onLogin={u => { setCurrentUser(u); }} onGoSignup={() => setAuthScreen('signup')} />
+          : <SignupPage onGoLogin={() => setAuthScreen('login')} />
+        }
+      </>
+    );
+  }
 
   return (
     <>
       <div className="screen">
         {screen === 'home' &&
           <HomePage
+            user={currentUser}
             savedLists={savedLists}
             onGoChecklist={goChecklist}
             onGoMyList={() => setScreen('mylist')}
@@ -82,6 +97,7 @@ export default function App() {
             onGoLoan={() => setScreen('loan')}
             onCreateList={openCreateModal}
             onOpenList={(list) => { setChecklistType(list.type); setScreen('checklist'); }}
+            onLogout={logout}
           />
         }
         {screen === 'checklist' &&
@@ -89,7 +105,7 @@ export default function App() {
             initialType={checklistType}
             checkStates={checkStates}
             onCheckStates={persistStates}
-            savedLists={savedLists}
+            onBack={() => setScreen('home')}
           />
         }
         {screen === 'mylist' &&
@@ -120,33 +136,21 @@ export default function App() {
       </nav>
 
       {showModal && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-sheet">
             <div className="modal-handle" />
             <div className="modal-title">새 체크리스트 만들기</div>
             <label className="modal-label">목록 이름 *</label>
-            <input
-              className="modal-input"
-              placeholder="예: 강남구 원룸 매물"
-              value={modalName}
-              onChange={e => setModalName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && createList()}
-            />
+            <input className="modal-input" placeholder="예: 강남구 원룸 매물"
+              value={modalName} onChange={e => setModalName(e.target.value)} />
             <label className="modal-label">주소 (선택)</label>
-            <input
-              className="modal-input"
-              placeholder="예: 서울시 강남구 역삼동"
-              value={modalAddr}
-              onChange={e => setModalAddr(e.target.value)}
-            />
+            <input className="modal-input" placeholder="예: 서울시 강남구 역삼동"
+              value={modalAddr} onChange={e => setModalAddr(e.target.value)} />
             <label className="modal-label">거래 유형</label>
             <div className="modal-type-btns">
               {['월세', '전세', '매매'].map(t => (
-                <button
-                  key={t}
-                  className={`modal-type-btn ${modalType === t ? 'selected' : ''}`}
-                  onClick={() => setModalType(t)}
-                >
+                <button key={t} className={`modal-type-btn ${modalType === t ? 'selected' : ''}`}
+                  onClick={() => setModalType(t)}>
                   {t === '월세' ? '🏠 월세' : t === '전세' ? '🔑 전세' : '🏡 매매'}
                 </button>
               ))}
