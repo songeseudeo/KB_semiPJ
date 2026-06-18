@@ -18,7 +18,7 @@ export default function LoginPage({ onLogin, onGoSignup }) {
     <div className="auth-screen">
       <div className="auth-hero">
         <span className="auth-logo">🏠</span>
-        <div className="auth-title">KB 부동산 가이드</div>
+        <div className="auth-title">하우지</div>
         <div className="auth-sub">처음 집 구할 때 든든한 파트너</div>
       </div>
       <div className="auth-body">

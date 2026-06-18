@@ -7,7 +7,7 @@ const now = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minu
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([
-    { role: 'bot', content: '안녕하세요! 👋\nKB 부동산 AI입니다.\n\n집 구할 때 궁금한 점을 물어보세요. 전세·월세·매매 모두 도와드릴게요!', time: now() }
+    { role: 'bot', content: '안녕하세요! 👋\n하우지 AI입니다.\n\n집 구할 때 궁금한 점을 물어보세요. 전세·월세·매매 모두 도와드릴게요!', time: now() }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,7 +54,7 @@ export default function ChatPage() {
       <div className="chat-header">
         <div className="chat-bot-icon">🏠</div>
         <div className="chat-bot-info">
-          <div className="chat-bot-name">KB 부동산 AI</div>
+          <div className="chat-bot-name">하우지 AI</div>
           <div className="chat-bot-status">온라인</div>
         </div>
       </div>
