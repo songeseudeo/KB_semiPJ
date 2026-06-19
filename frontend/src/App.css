@@ -593,3 +593,57 @@ body {
   border-radius: 14px; padding: 13px; font-size: 15px; font-weight: 600;
   color: #A8B4CC; cursor: pointer; font-family: inherit; margin-top: 8px;
 }
+
+/* ── CUSTOM CHECKLIST ───────────────────────── */
+.custom-step-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 10px rgba(91,110,245,0.08);
+}
+.custom-step-label {
+  font-size: 13px; font-weight: 800; color: #5B6EF5;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 6px;
+}
+.price-result-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 10px rgba(91,110,245,0.08);
+}
+.price-result-title {
+  font-size: 15px; font-weight: 800; color: #2D3A6B; margin-bottom: 14px;
+}
+.price-stats {
+  display: flex; gap: 10px; margin-bottom: 10px;
+}
+.price-stat {
+  flex: 1; background: #F7F9FF; border-radius: 12px;
+  padding: 10px; text-align: center;
+}
+.ps-label { font-size: 11px; color: #8A96B0; display: block; margin-bottom: 4px; font-weight: 600; }
+.ps-value { font-size: 14px; font-weight: 800; color: #2D3A6B; }
+.price-meta {
+  font-size: 12px; color: #8A96B0; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.budget-tag {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+}
+.budget-tag.ok { background: #DCFCE7; color: #166534; }
+.budget-tag.warn { background: #FEF9C3; color: #854D0E; }
+.price-sample {
+  font-size: 12px; color: #6B7A99; padding: 6px 0;
+  border-top: 1px solid #F0F3FA;
+}
+.price-not-found {
+  font-size: 13px; color: #854D0E; background: #FEF9C3;
+  padding: 12px; border-radius: 10px; margin-bottom: 8px;
+}
+.custom-checklist-preview {
+  background: #fff; border-radius: 16px; padding: 20px;
+  box-shadow: 0 2px 10px rgba(91,110,245,0.08);
+}

@@ -7,6 +7,8 @@ import TermsPage from './pages/TermsPage';
 import LoanPage from './pages/LoanPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import CustomChecklistPage from './pages/CustomChecklistPage';
+import CustomChecklistViewPage from './pages/CustomChecklistViewPage';
 import './App.css';
 
 const TABS = [
@@ -18,12 +20,13 @@ const TABS = [
 const NAV_TABS = ['home', 'checklist', 'mylist', 'chat'];
 
 export default function App() {
-  const [authScreen, setAuthScreen] = useState('login'); // 'login' | 'signup'
+  const [authScreen, setAuthScreen] = useState('login');
   const [currentUser, setCurrentUser] = useState(
     () => JSON.parse(localStorage.getItem('kb_current_user') || 'null')
   );
   const [screen, setScreen] = useState('home');
   const [checklistType, setChecklistType] = useState('월세');
+  const [viewingList, setViewingList] = useState(null);
   const [savedLists, setSavedLists] = useState(
     () => JSON.parse(localStorage.getItem('kb_lists') || '[]')
   );
@@ -54,81 +57,80 @@ export default function App() {
     setModalName(''); setModalAddr(''); setModalType('월세');
     setShowModal(true);
   };
-  const createList = () => {
+  const createBasicList = () => {
     if (!modalName.trim()) return;
-    const newList = {
-      id: Date.now(),
-      name: modalName.trim(),
-      addr: modalAddr.trim() || '주소 미입력',
-      type: modalType,
-      date: new Date().toLocaleDateString('ko-KR'),
-    };
-    persistLists([newList, ...savedLists]);
+    persistLists([{ id: Date.now(), name: modalName.trim(), addr: modalAddr.trim() || '주소 미입력', type: modalType, date: new Date().toLocaleDateString('ko-KR'), isCustom: false }, ...savedLists]);
     setShowModal(false);
     setChecklistType(modalType);
     setScreen('checklist');
   };
 
-  const goChecklist = (type) => { setChecklistType(type); setScreen('checklist'); };
+  const openList = (list) => {
+    if (list.isCustom) {
+      setViewingList(list);
+      setScreen('customView');
+    } else {
+      setChecklistType(list.type);
+      setScreen('checklist');
+    }
+  };
+
+  const updateList = (updated) => {
+    const newLists = savedLists.map(l => l.id === updated.id ? updated : l);
+    persistLists(newLists);
+    setViewingList(updated);
+  };
+
+  const saveCustomList = (newList) => {
+    persistLists([newList, ...savedLists]);
+    setViewingList(newList);
+    setScreen('customView');
+  };
+
   const activeTab = NAV_TABS.includes(screen) ? screen : null;
 
   if (!currentUser) {
-    return (
-      <>
-        {authScreen === 'login'
-          ? <LoginPage onLogin={u => { setCurrentUser(u); }} onGoSignup={() => setAuthScreen('signup')} />
-          : <SignupPage onGoLogin={() => setAuthScreen('login')} />
-        }
-      </>
-    );
+    return authScreen === 'login'
+      ? <LoginPage onLogin={u => setCurrentUser(u)} onGoSignup={() => setAuthScreen('signup')} />
+      : <SignupPage onGoLogin={() => setAuthScreen('login')} />;
   }
 
   return (
     <>
       <div className="screen">
         {screen === 'home' &&
-          <HomePage
-            user={currentUser}
-            savedLists={savedLists}
-            onGoChecklist={goChecklist}
+          <HomePage user={currentUser} savedLists={savedLists}
+            onGoChecklist={t => { setChecklistType(t); setScreen('checklist'); }}
             onGoMyList={() => setScreen('mylist')}
             onGoChat={() => setScreen('chat')}
             onGoTerms={() => setScreen('terms')}
             onGoLoan={() => setScreen('loan')}
             onCreateList={openCreateModal}
-            onOpenList={(list) => { setChecklistType(list.type); setScreen('checklist'); }}
+            onOpenList={openList}
             onLogout={logout}
-          />
-        }
+          />}
         {screen === 'checklist' &&
-          <ChecklistPage
-            initialType={checklistType}
-            checkStates={checkStates}
-            onCheckStates={persistStates}
-            onBack={() => setScreen('home')}
-          />
-        }
+          <ChecklistPage initialType={checklistType} checkStates={checkStates}
+            onCheckStates={persistStates} onBack={() => setScreen('home')} />}
         {screen === 'mylist' &&
-          <MyListPage
-            savedLists={savedLists}
-            checkStates={checkStates}
+          <MyListPage savedLists={savedLists} checkStates={checkStates}
             onCreateList={openCreateModal}
-            onOpenList={(list) => { setChecklistType(list.type); setScreen('checklist'); }}
-            onDeleteList={(id) => persistLists(savedLists.filter(l => l.id !== id))}
-          />
-        }
+            onCreateCustom={() => setScreen('customCreate')}
+            onOpenList={openList}
+            onDeleteList={id => persistLists(savedLists.filter(l => l.id !== id))} />}
         {screen === 'chat' && <ChatPage />}
         {screen === 'terms' && <TermsPage onBack={() => setScreen('home')} />}
         {screen === 'loan' && <LoanPage onBack={() => setScreen('home')} />}
+        {screen === 'customCreate' &&
+          <CustomChecklistPage onBack={() => setScreen('mylist')} onSave={saveCustomList} />}
+        {screen === 'customView' && viewingList &&
+          <CustomChecklistViewPage list={viewingList} onBack={() => setScreen('mylist')} onUpdateList={updateList} />}
       </div>
 
       <nav className="bottom-nav">
         {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`nav-item ${activeTab === t.id ? 'active' : ''}`}
-            onClick={() => setScreen(t.id)}
-          >
+          <button key={t.id} className={`nav-item ${activeTab === t.id ? 'active' : ''}`}
+            onClick={() => setScreen(t.id)}>
             <span className="nav-icon">{t.icon}</span>
             <span className="nav-label">{t.label}</span>
           </button>
@@ -139,7 +141,7 @@ export default function App() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal-sheet">
             <div className="modal-handle" />
-            <div className="modal-title">새 체크리스트 만들기</div>
+            <div className="modal-title">기본 체크리스트 만들기</div>
             <label className="modal-label">목록 이름 *</label>
             <input className="modal-input" placeholder="예: 강남구 원룸 매물"
               value={modalName} onChange={e => setModalName(e.target.value)} />
@@ -155,7 +157,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <button className="modal-confirm-btn" onClick={createList}>체크리스트 시작하기</button>
+            <button className="modal-confirm-btn" onClick={createBasicList}>체크리스트 시작하기</button>
             <button className="modal-cancel-btn" onClick={() => setShowModal(false)}>취소</button>
           </div>
         </div>
