@@ -62,6 +62,8 @@ export default function MyListPage({ savedLists, checkStates, onCreateList, onCr
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     {list.isCustom && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#EEF0FF', color: '#5B6EF5' }}>✨ AI맞춤</span>}
                     <span className="mlc-type">{list.type}</span>
+                    <button onClick={e => { e.stopPropagation(); if (window.confirm(`"${list.name}" 목록을 삭제할까요?`)) onDeleteList(list.id); }}
+                      style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', padding: '2px 4px', color: '#C0C8D8', lineHeight: 1 }}>🗑️</button>
                   </div>
                 </div>
                 <div className="mlc-addr">📍 {list.addr}</div>
