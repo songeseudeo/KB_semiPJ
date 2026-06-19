@@ -60,8 +60,10 @@ export default function App() {
   };
   const createBasicList = () => {
     if (!modalName.trim()) return;
-    persistLists([{ id: Date.now(), name: modalName.trim(), addr: modalAddr.trim() || '주소 미입력', type: modalType, date: new Date().toLocaleDateString('ko-KR'), isCustom: false }, ...savedLists]);
+    const newList = { id: Date.now(), name: modalName.trim(), addr: modalAddr.trim() || '주소 미입력', type: modalType, date: new Date().toLocaleDateString('ko-KR'), isCustom: false };
+    persistLists([newList, ...savedLists]);
     setShowModal(false);
+    setViewingList(newList);
     setChecklistType(modalType);
     setScreen('checklist');
   };
