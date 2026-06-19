@@ -31,10 +31,7 @@ export default function MyListPage({ savedLists, checkStates, onCreateList, onCr
           <div className="ml-header-title">내 체크리스트</div>
           <div className="ml-header-sub">저장된 목록 {savedLists.length}개</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="ml-add-btn" style={{ background: '#fff', color: '#5B6EF5', border: '1.5px solid #5B6EF5' }} onClick={onCreateList}>기본</button>
-          <button className="ml-add-btn" onClick={onCreateCustom}>✨ 맞춤</button>
-        </div>
+        <button className="ml-add-btn" onClick={onCreateCustom}>✨ 맞춤</button>
       </div>
 
       <div style={{ margin: '0 20px 16px', background: '#EEF0FF', borderRadius: 14, padding: '14px 16px' }}>
