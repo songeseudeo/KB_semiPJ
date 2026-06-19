@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'https';
 
 const CODES = {
   '종로구':'11110','중구':'11140','용산구':'11170','성동구':'11200','광진구':'11215',
@@ -63,7 +63,7 @@ function getYM(ago) {
 }
 
 function getXml(url) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const req = https.get(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -75,7 +75,7 @@ function getXml(url) {
       res.on('data', c => { body += c; });
       res.on('end', () => resolve(body));
     });
-    req.on('error', (e) => resolve(''));
+    req.on('error', () => resolve(''));
     req.end();
   });
 }
@@ -87,14 +87,13 @@ function parsePrice(s) {
 function parseItems(xml, isSale) {
   const out = [];
   for (const m of (xml.match(/<item>([\s\S]*?)<\/item>/g) || [])) {
-    const g = tag => { const r = m.match(new RegExp(`<${tag}[^>]*>([^<]*)</${tag}>`)); return r ? r[1].trim() : ''; };
-    const price = isSale ? g('거래금액') : g('보증금액');
-    out.push({ 아파트: g('아파트'), 전용면적: g('전용면적'), 거래금액: price, 월세금액: isSale ? '' : g('월세금액') });
+    const g = tag => { const r = m.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`)); return r ? r[1].trim() : ''; };
+    out.push({ 아파트: g('아파트'), 전용면적: g('전용면적'), 거래금액: isSale ? g('거래금액') : g('보증금액'), 월세금액: isSale ? '' : g('월세금액') });
   }
   return out;
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -137,4 +136,4 @@ module.exports = async (req, res) => {
   } catch (e) {
     return res.json({ found: false, message: '오류: ' + e.message });
   }
-};
+}
