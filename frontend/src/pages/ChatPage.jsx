@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { CHAT_ANSWERS } from '../data/checklistData';
-import api from '../api/api';
 
 const SUGGESTIONS = Object.keys(CHAT_ANSWERS);
 const now = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
@@ -22,31 +21,15 @@ export default function ChatPage() {
     setInput('');
     setLoading(true);
 
-    if (CHAT_ANSWERS[content]) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'bot', content: CHAT_ANSWERS[content], time: now() }]);
-        setLoading(false);
-      }, 600);
-      return;
-    }
-
-    try {
-      const apiMessages = [...messages, { role: 'user', content }]
-        .map(m => ({
-          role: m.role === 'bot' ? 'assistant' : 'user',
-          content: m.content,
-        }));
-      const res = await api.post('/api/chat', { messages: apiMessages });
-      setMessages(prev => [...prev, { role: 'bot', content: res.data.reply, time: now() }]);
-    } catch {
+    setTimeout(() => {
+      const answer = CHAT_ANSWERS[content];
       setMessages(prev => [...prev, {
         role: 'bot',
-        content: '잠시 연결이 원활하지 않아요 😅\n아래 자주 묻는 질문을 눌러보시거나, 잠시 후 다시 시도해 주세요.',
+        content: answer || '아직 그 질문은 제가 답하기 어렵네요 😅\n\n아래 버튼으로 자주 묻는 질문을 눌러보시면 도움이 될 거예요!',
         time: now(),
       }]);
-    } finally {
       setLoading(false);
-    }
+    }, 600);
   };
 
   return (
