@@ -212,8 +212,8 @@ public class RealEstateController {
 
     private List<Map<String, String>> fetch(String lawdCd, String ym, String tradeType) throws Exception {
         String endpoint = tradeType.equals("매매")
-                ? "https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTrade"
-                : "https://apis.data.go.kr/1613000/RTMSDataSvcAptRentDev/getRTMSDataSvcAptRent";
+                ? "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade"
+                : "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent";
 
         String encodedKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
         String url = endpoint + "?serviceKey=" + encodedKey
