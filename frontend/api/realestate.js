@@ -88,7 +88,13 @@ function parseItems(xml, isSale) {
   const out = [];
   for (const m of (xml.match(/<item>([\s\S]*?)<\/item>/g) || [])) {
     const g = tag => { const r = m.match(new RegExp(`<${tag}[^>]*>([^<]*)<\/${tag}>`)); return r ? r[1].trim() : ''; };
-    out.push({ 아파트: g('아파트'), 전용면적: g('전용면적'), 거래금액: isSale ? g('거래금액') : g('보증금액'), 월세금액: isSale ? '' : g('월세금액') });
+    out.push({
+      아파트: g('aptNm'),
+      전용면적: g('excluUseAr'),
+      법정동: g('umdNm'),
+      거래금액: isSale ? g('dealAmount') : g('deposit'),
+      월세금액: isSale ? '' : g('monthlyRent'),
+    });
   }
   return out;
 }
