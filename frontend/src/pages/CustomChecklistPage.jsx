@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import api from '../api/api';
 
 const fmt = (won) => {
@@ -59,7 +60,7 @@ export default function CustomChecklistPage({ onBack, onSave }) {
     if (!region.trim()) { alert('지역을 입력해주세요 (예: 강남구, 수원시)'); return; }
     setPriceLoading(true);
     try {
-      const res = await api.get('/api/realestate/price', { params: { region: region.trim(), tradeType } });
+      const res = await axios.get('/api/realestate', { params: { region: region.trim(), tradeType } });
       setPriceData(res.data);
     } catch {
       setPriceData({ found: false, message: '시세 조회 실패. AI로 체크리스트만 생성합니다.' });
