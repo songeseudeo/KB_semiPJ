@@ -49,8 +49,9 @@ export default function App() {
 
   const logout = () => {
     localStorage.removeItem('kb_current_user');
-    setCurrentUser(null);
+    setScreen('home');
     setAuthScreen('login');
+    setCurrentUser(null);
   };
 
   const openCreateModal = () => {
