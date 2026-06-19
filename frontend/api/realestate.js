@@ -1,3 +1,6 @@
+const https = require('https');
+const { URL } = require('url');
+
 const CODES = {
   '종로구':'11110','중구':'11140','용산구':'11170','성동구':'11200','광진구':'11215',
   '동대문구':'11230','중랑구':'11260','성북구':'11290','강북구':'11305','도봉구':'11320',
@@ -34,7 +37,8 @@ const DONG_TO_GU = {
   '사당동':'동작구','노량진동':'동작구','상도동':'동작구','흑석동':'동작구',
   '신림동':'관악구','봉천동':'관악구',
   '불광동':'은평구','응암동':'은평구',
-  '하대원동':'성남시','상대원동':'성남시','분당동':'성남시','서현동':'성남시','야탑동':'성남시','정자동':'성남시','수내동':'성남시',
+  '하대원동':'성남시','상대원동':'성남시','분당동':'성남시','서현동':'성남시',
+  '야탑동':'성남시','정자동':'성남시','수내동':'성남시',
   '영통동':'수원시','매탄동':'수원시','인계동':'수원시','권선동':'수원시',
   '화정동':'고양시','행신동':'고양시','주엽동':'고양시','대화동':'고양시','백석동':'고양시',
   '수지동':'용인시','동천동':'용인시','죽전동':'용인시','기흥동':'용인시',
@@ -42,7 +46,7 @@ const DONG_TO_GU = {
 };
 
 function extractDistrict(region) {
-  const t = String(region).trim();
+  const t = String(region || '').trim();
   if (DONG_TO_GU[t]) return DONG_TO_GU[t];
   for (const [dong, gu] of Object.entries(DONG_TO_GU)) {
     if (t.startsWith(dong)) return gu;
@@ -70,7 +74,10 @@ function parseXml(xml, tradeType) {
   const items = [];
   const matches = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
   for (const item of matches) {
-    const get = tag => { const m = item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`)); return m ? m[1].trim() : ''; };
+    const get = tag => {
+      const m = item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`));
+      return m ? m[1].trim() : '';
+    };
     const obj = { 아파트: get('아파트'), 전용면적: get('전용면적'), 법정동: get('법정동') };
     obj.거래금액 = tradeType === '매매' ? get('거래금액') : get('보증금액');
     if (tradeType !== '매매') obj.월세금액 = get('월세금액');
@@ -85,16 +92,37 @@ function getYM(ago) {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function httpsGet(urlStr) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(urlStr);
+    const options = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      method: 'GET',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      rejectUnauthorized: false,
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.setTimeout(10000, () => { req.destroy(new Error('timeout')); });
+    req.end();
+  });
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const region = String(req.query.region || '').trim();
-    const tradeType = String(req.query.tradeType || '').trim();
+    const region = String(req.query && req.query.region || '').trim();
+    const tradeType = String(req.query && req.query.tradeType || '').trim();
 
     if (!region || !tradeType) {
-      return res.status(400).json({ found: false, message: 'region, tradeType 필수' });
+      return res.json({ found: false, message: 'region, tradeType 필수' });
     }
 
     const district = extractDistrict(region);
@@ -104,33 +132,28 @@ module.exports = async (req, res) => {
       return res.json({ found: false, message: `'${district}'은(는) 지원하지 않는 지역입니다.` });
     }
 
-    const apiKey = process.env.PUBLIC_DATA_API_KEY || 'e2daae48fe5773dba30f90130dd58aec015ab764e8243ac7cd6d88fea5e267e4';
+    const apiKey = (process.env.PUBLIC_DATA_API_KEY || 'e2daae48fe5773dba30f90130dd58aec015ab764e8243ac7cd6d88fea5e267e4').trim();
     const base = tradeType === '매매'
       ? 'https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade'
       : 'https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent';
 
-    let txs = [], ym = '';
+    let txs = [], ym = '', lastBody = '';
     for (let ago = 1; ago <= 3 && txs.length === 0; ago++) {
       ym = getYM(ago);
       const url = `${base}?serviceKey=${apiKey}&LAWD_CD=${lawdCd}&DEAL_YMD=${ym}&numOfRows=20&pageNo=1`;
-      try {
-        const r = await fetch(url);
-        const body = await r.text();
-        if (body.includes('<item>')) {
-          txs = parseXml(body, tradeType);
-        }
-      } catch (fetchErr) {
-        return res.json({ found: false, message: `API 호출 오류: ${fetchErr.message}` });
+      lastBody = await httpsGet(url);
+      if (lastBody.includes('<item>')) {
+        txs = parseXml(lastBody, tradeType);
       }
     }
 
     if (txs.length === 0) {
-      return res.json({ found: false, message: '최근 3개월 거래 데이터가 없습니다.' });
+      return res.json({ found: false, message: '최근 거래 데이터 없음', debug: lastBody.slice(0, 300) });
     }
 
     const prices = txs.map(t => parsePrice(t.거래금액)).filter(p => p > 0);
     if (prices.length === 0) {
-      return res.json({ found: false, message: '가격 데이터를 파싱할 수 없습니다.' });
+      return res.json({ found: false, message: '가격 파싱 실패', debug: JSON.stringify(txs[0]) });
     }
 
     return res.json({
@@ -143,6 +166,6 @@ module.exports = async (req, res) => {
     });
 
   } catch (e) {
-    return res.status(500).json({ found: false, message: `서버 오류: ${e.message}`, stack: e.stack });
+    return res.json({ found: false, message: `오류: ${e.message}` });
   }
 };
