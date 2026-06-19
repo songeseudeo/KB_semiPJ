@@ -62,8 +62,11 @@ export default function CustomChecklistPage({ onBack, onSave }) {
     try {
       const res = await axios.get('/api/realestate', { params: { region: region.trim(), tradeType } });
       setPriceData(res.data);
-    } catch {
-      setPriceData({ found: false, message: '시세 조회 실패. AI로 체크리스트만 생성합니다.' });
+    } catch (err) {
+      const msg = err?.response?.status
+        ? `HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`
+        : err?.message || '네트워크 오류';
+      setPriceData({ found: false, message: `시세 조회 실패 (${msg})` });
     } finally {
       setPriceLoading(false);
       setStep(2);
