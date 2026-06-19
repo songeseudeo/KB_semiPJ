@@ -125,7 +125,8 @@ export default function App() {
         {screen === 'customCreate' &&
           <CustomChecklistPage onBack={() => setScreen('mylist')} onSave={saveCustomList} />}
         {screen === 'customView' && viewingList &&
-          <CustomChecklistViewPage list={viewingList} onBack={() => setScreen('mylist')} onUpdateList={updateList} />}
+          <CustomChecklistViewPage list={viewingList} onBack={() => setScreen('mylist')} onUpdateList={updateList}
+            onDelete={id => { persistLists(savedLists.filter(l => l.id !== id)); setScreen('mylist'); }} />}
       </div>
 
       <nav className="bottom-nav">
