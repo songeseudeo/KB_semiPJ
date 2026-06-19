@@ -1,19 +1,8 @@
-import { CHECKLIST_DATA } from '../data/checklistData';
-
 export default function HomePage({
-  user, savedLists,
+  user,
   onGoChecklist, onGoMyList, onGoChat, onGoTerms, onGoLoan,
-  onCreateList, onOpenList, onLogout,
+  onLogout,
 }) {
-  const getProgress = (list) => {
-    const data = CHECKLIST_DATA[list.type] || [];
-    const total = data.reduce((s, step) => s + step.items.length, 0);
-    if (total === 0) return 0;
-    const stored = JSON.parse(localStorage.getItem('kb_states') || '{}');
-    const done = Object.values(stored[list.type] || {}).filter(Boolean).length;
-    return Math.round((done / total) * 100);
-  };
-
   return (
     <>
       <div className="hero">
@@ -72,39 +61,6 @@ export default function HomePage({
         </button>
       </div>
 
-      <div className="section-title">최근 체크리스트</div>
-      <div className="recent-section">
-        {savedLists.length === 0 ? (
-          <div className="recent-empty">
-            <span className="empty-icon">📋</span>
-            아직 저장된 체크리스트가 없어요<br />
-            <button onClick={onCreateList} style={{
-              marginTop: 12, background: '#5B6EF5', color: '#fff', border: 'none',
-              borderRadius: 20, padding: '8px 20px', fontFamily: 'inherit',
-              fontSize: 13, fontWeight: 700, cursor: 'pointer',
-            }}>+ 새 목록 만들기</button>
-          </div>
-        ) : (
-          savedLists.slice(0, 3).map(list => {
-            const pct = getProgress(list);
-            return (
-              <div key={list.id} className="recent-card" onClick={() => onOpenList(list)}>
-                <div className="rc-header">
-                  <span className="rc-name">{list.name}</span>
-                  <span className="rc-type">{list.type}</span>
-                </div>
-                <div className="rc-progress">
-                  <div className="rc-progress-fill" style={{ width: `${pct}%` }} />
-                </div>
-                <div className="rc-meta">
-                  <span>{list.addr}</span>
-                  <span>{pct}% 완료</span>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
     </>
   );
 }
