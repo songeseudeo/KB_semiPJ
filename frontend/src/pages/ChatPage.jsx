@@ -1,12 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
-import { CHAT_ANSWERS } from '../data/checklistData';
+import { CHAT_QA } from '../data/checklistData';
 
-const SUGGESTIONS = Object.keys(CHAT_ANSWERS);
+const SUGGESTIONS = CHAT_QA.map(q => q.label);
 const now = () => new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+function findAnswer(input) {
+  const text = input.toLowerCase();
+  let best = null;
+  let bestScore = 0;
+  for (const qa of CHAT_QA) {
+    const score = qa.keywords.filter(kw => text.includes(kw.toLowerCase())).length;
+    if (score > bestScore) { bestScore = score; best = qa; }
+  }
+  return bestScore >= 1 ? best.answer : null;
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([
-    { role: 'bot', content: '안녕하세요! 👋\n하우지 AI입니다.\n\n집 구할 때 궁금한 점을 물어보세요. 전세·월세·매매 모두 도와드릴게요!', time: now() }
+    { role: 'bot', content: '안녕하세요! 👋\n하우지 AI입니다.\n\n집 구할 때 궁금한 점을 물어보세요.\n전세·월세·매매 모두 도와드릴게요!', time: now() }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,7 +25,7 @@ export default function ChatPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const send = async (text) => {
+  const send = (text) => {
     const content = (text || input).trim();
     if (!content || loading) return;
     setMessages(prev => [...prev, { role: 'user', content, time: now() }]);
@@ -22,10 +33,10 @@ export default function ChatPage() {
     setLoading(true);
 
     setTimeout(() => {
-      const answer = CHAT_ANSWERS[content];
+      const answer = findAnswer(content);
       setMessages(prev => [...prev, {
         role: 'bot',
-        content: answer || '아직 그 질문은 제가 답하기 어렵네요 😅\n\n아래 버튼으로 자주 묻는 질문을 눌러보시면 도움이 될 거예요!',
+        content: answer || '음.. 그 부분은 제가 정확히 답하기 어렵네요 😅\n\n아래 버튼에서 비슷한 질문을 찾아보시거나, 더 구체적으로 물어봐 주세요!',
         time: now(),
       }]);
       setLoading(false);
