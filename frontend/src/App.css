@@ -147,6 +147,8 @@ body {
   border-radius: 50%;
 }
 .hero-greeting {
+  position: relative;
+  z-index: 1;
   font-size: 13px;
   font-weight: 600;
   color: #5B6EF5;
