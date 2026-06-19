@@ -1,15 +1,24 @@
 import { useState } from 'react';
+import { supabase } from '../supabase';
 
 export default function LoginPage({ onLogin, onGoSignup }) {
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
   const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const submit = () => {
+  const submit = async () => {
     if (!id || !pw) { setErr('아이디와 비밀번호를 입력해주세요.'); return; }
-    const users = JSON.parse(localStorage.getItem('kb_users') || '[]');
-    const user = users.find(u => u.id === id && u.pw === pw);
-    if (!user) { setErr('아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', id)
+      .eq('password', pw)
+      .single();
+    setLoading(false);
+    if (error || !data) { setErr('아이디 또는 비밀번호가 올바르지 않습니다.'); return; }
+    const user = { name: data.name, email: data.email, id: data.username };
     localStorage.setItem('kb_current_user', JSON.stringify(user));
     onLogin(user);
   };
@@ -30,7 +39,9 @@ export default function LoginPage({ onLogin, onGoSignup }) {
         <input className="auth-input" type="password" placeholder="비밀번호 입력" value={pw}
           onChange={e => { setPw(e.target.value); setErr(''); }}
           onKeyDown={e => e.key === 'Enter' && submit()} />
-        <button className="auth-btn" onClick={submit}>로그인</button>
+        <button className="auth-btn" onClick={submit} disabled={loading}>
+          {loading ? '로그인 중...' : '로그인'}
+        </button>
         <div className="auth-switch">
           계정이 없으신가요?<span onClick={onGoSignup}>회원가입</span>
         </div>

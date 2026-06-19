@@ -1,21 +1,33 @@
 import { useState } from 'react';
+import { supabase } from '../supabase';
 
 export default function SignupPage({ onGoLogin }) {
   const [form, setForm] = useState({ name: '', email: '', birth: '', id: '', pw: '', pw2: '' });
   const [err, setErr] = useState('');
   const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setErr(''); };
 
-  const submit = () => {
+  const submit = async () => {
     const { name, email, birth, id, pw, pw2 } = form;
     if (!name || !email || !birth || !id || !pw || !pw2) { setErr('모든 항목을 입력해주세요.'); return; }
     if (pw !== pw2) { setErr('비밀번호가 일치하지 않습니다.'); return; }
     if (pw.length < 6) { setErr('비밀번호는 6자 이상이어야 합니다.'); return; }
-    const users = JSON.parse(localStorage.getItem('kb_users') || '[]');
-    if (users.find(u => u.id === id)) { setErr('이미 사용 중인 아이디입니다.'); return; }
-    const newUser = { name, email, birth, id, pw };
-    localStorage.setItem('kb_users', JSON.stringify([...users, newUser]));
+    setLoading(true);
+    const { error } = await supabase.from('users').insert({
+      username: id,
+      password: pw,
+      name,
+      email,
+      birthdate: birth,
+    });
+    setLoading(false);
+    if (error) {
+      if (error.code === '23505') setErr('이미 사용 중인 아이디입니다.');
+      else setErr('가입 중 오류가 발생했습니다: ' + error.message);
+      return;
+    }
     setDone(true);
   };
 
@@ -60,7 +72,9 @@ export default function SignupPage({ onGoLogin }) {
         <input className="auth-input" type="password" placeholder="비밀번호 재입력" value={form.pw2}
           onChange={e => set('pw2', e.target.value)}
           onKeyDown={e => e.key === 'Enter' && submit()} />
-        <button className="auth-btn" onClick={submit}>가입하기</button>
+        <button className="auth-btn" onClick={submit} disabled={loading}>
+          {loading ? '가입 중...' : '가입하기'}
+        </button>
         <div className="auth-switch">
           이미 계정이 있으신가요?<span onClick={onGoLogin}>로그인</span>
         </div>
