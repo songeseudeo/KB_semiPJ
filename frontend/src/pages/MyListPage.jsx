@@ -19,7 +19,7 @@ export default function MyListPage({ savedLists, checkStates, onCreateList, onCr
     const data = CHECKLIST_DATA[list.type] || [];
     const total = data.reduce((s, step) => s + step.items.length, 0);
     if (total === 0) return { pct: 0, done: 0, total: 0 };
-    const states = checkStates[list.type] || {};
+    const states = checkStates[list.id] || {};
     const done = Object.values(states).filter(Boolean).length;
     return { pct: Math.round((done / total) * 100), done, total };
   };

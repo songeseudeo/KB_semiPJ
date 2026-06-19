@@ -71,6 +71,7 @@ export default function App() {
       setViewingList(list);
       setScreen('customView');
     } else {
+      setViewingList(list);
       setChecklistType(list.type);
       setScreen('checklist');
     }
@@ -111,8 +112,9 @@ export default function App() {
             onLogout={logout}
           />}
         {screen === 'checklist' &&
-          <ChecklistPage initialType={checklistType} checkStates={checkStates}
-            onCheckStates={persistStates} onBack={() => setScreen('home')} />}
+          <ChecklistPage initialType={checklistType} listId={viewingList?.id}
+            checkStates={checkStates} onCheckStates={persistStates}
+            onBack={() => { setViewingList(null); setScreen(viewingList ? 'mylist' : 'home'); }} />}
         {screen === 'mylist' &&
           <MyListPage savedLists={savedLists} checkStates={checkStates}
             onCreateList={openCreateModal}

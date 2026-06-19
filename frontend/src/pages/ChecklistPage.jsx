@@ -3,19 +3,22 @@ import { CHECKLIST_DATA } from '../data/checklistData';
 
 const TAG_LABELS = { important: '⚠️ 중요', tip: '💡 팁', legal: '⚖️ 법률' };
 
-export default function ChecklistPage({ initialType = '월세', checkStates, onCheckStates, onBack }) {
+export default function ChecklistPage({ initialType = '월세', listId, checkStates, onCheckStates, onBack }) {
   const [activeType, setActiveType] = useState(initialType);
   const steps = CHECKLIST_DATA[activeType] || [];
 
+  // listId가 있으면 목록별 독립 상태, 없으면 자유 탐색 상태
+  const stateKey = listId ? listId : `free_${activeType}`;
+  const typeStates = checkStates[stateKey] || {};
+
   const allKeys = steps.flatMap((s, si) => s.items.map((_, ii) => `${si}_${ii}`));
-  const typeStates = checkStates[activeType] || {};
   const doneCount = allKeys.filter(k => typeStates[k]).length;
   const total = allKeys.length;
   const pct = total ? Math.round((doneCount / total) * 100) : 0;
 
   const toggle = (si, ii) => {
     const key = `${si}_${ii}`;
-    onCheckStates({ ...checkStates, [activeType]: { ...typeStates, [key]: !typeStates[key] } });
+    onCheckStates({ ...checkStates, [stateKey]: { ...typeStates, [key]: !typeStates[key] } });
   };
 
   const isStepDone = (si) => steps[si].items.every((_, ii) => typeStates[`${si}_${ii}`]);
